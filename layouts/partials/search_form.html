@@ -1,0 +1,31 @@
+<div class="search" data-jc-component="search" role="dialog">
+  <label class="search-overlay" for="__search"></label>
+  <div class="relative float-right hidden search-expandable lg:flex" role="search">
+    <form class="relative w-full" name="search">
+      <input class="search-input focus:outline-none" type="text" name="query" data-jc-component="search-query" placeholder="Search" aria-label="Search" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" required=""/>
+      <input type="hidden" name="index" value="{{- printf "/%s/%s/search_index.json" .Page.Params._project .Page.Params._version -}}"/>
+      <label class="search-icon" for="__search">
+      </label>
+    </form>
+    <div class="search-output">
+      <div class="search-scrollwrap" tabindex="0">
+        <div class="search-result" data-jc-component="search-result">
+          <div class="search-result-meta">
+            Type to start searching
+          </div>
+          <ol class="search-result-list">
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+  <template data-search-target="template">
+    <article>
+      <header>
+        <h2 class="title mt--s mb--xxs"><a href="#">Title here</a></h2>
+        <div class="submitted"><time class="created-date">Date here</time></div>
+      </header>
+      <p class="content">Summary here</p>
+    </article>
+  </template>  
+</div>

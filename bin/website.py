@@ -3,10 +3,8 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #   "cleo>=1.0.0a5",
-#   "PyYAML>=6.0",
-#   "tomli>=2.0",
 #   "httpx>=0.23",
-#   "tomli-w>=1.0",
+#   "PyYAML>=6.0.2",
 # ]
 # ///
 from __future__ import annotations
@@ -18,6 +16,7 @@ import shutil
 import stat
 import subprocess
 import tempfile
+import json
 
 from contextlib import contextmanager
 from pathlib import Path
@@ -25,8 +24,6 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 import httpx
-import tomli
-import tomli_w
 import yaml
 
 from cleo.application import Application
@@ -56,6 +53,11 @@ class Project(abc.ABC):
     @abc.abstractmethod
     def name(self) -> str:
         pass
+
+    @property
+    @abc.abstractmethod
+    def description(self) -> str:
+        return self.name
 
     @property
     def display_name(self) -> str:
@@ -89,6 +91,10 @@ class Project(abc.ABC):
     def development_branch(self) -> str:
         return next(iter(self.valid_branches))
 
+    @property
+    def versions(self) -> list[str]:
+        return []
+
 
 class LintrProject(Project):
     @property
@@ -100,6 +106,10 @@ class LintrProject(Project):
         return "lintr"
 
     @property
+    def description(self) -> str:
+        return "A powerful and flexible GitHub repository settings linter."
+
+    @property
     def display_name(self) -> str:
         return "Lintr"
 
@@ -109,7 +119,11 @@ class LintrProject(Project):
 
     @property
     def valid_branches(self) -> Iterable[str]:
-        return {"main"}
+        return ["develop"]
+
+    @property
+    def versions(self) -> list[str]:
+        return []
 
 
 _projects = (LintrProject(),)
@@ -140,10 +154,19 @@ def get_branches(project: Project) -> dict[str, str]:
         if branch["name"] in project.valid_branches
     }
 
+def get_configuration_template(file: Path = Path(__file__).parent.parent / "hugo.yaml.in") -> dict[str, Any]:
+    with open(file) as f:
+        return yaml.full_load(f)
+
+def get_configuration(file: Path = Path(__file__).parent.parent / "hugo.yaml") -> dict[str, Any]:
+    with open(file) as f:
+        return yaml.full_load(f)
+
 
 class ConfigureCommand(Command):
+    DESTINATION: Path = Path(__file__).parent.parent / "content"
     name = "configure"
-    description = "Generate website config.toml file."
+    description = "Generate website hugo.yaml file."
     options: ClassVar[list[Option]] = list(
         itertools.chain.from_iterable(
             [
@@ -165,55 +188,74 @@ class ConfigureCommand(Command):
         )
     )
 
-    @staticmethod
-    def get_configuration(file: Path | None = None) -> dict[str, Any]:
-        if file is None:
-            file = Path(__file__).parent.parent / "pyproject.toml"
-
-        return tomli.loads(file.read_text())["tool"]["website"]
-
     def render(self, file: Path | None = None) -> None:
         if file is None:
-            file = Path(__file__).parent.parent / "config.toml"
+            file = Path(__file__).parent.parent / "hugo.yaml"
 
-        content = self.get_configuration()
-        config = content["config"]
+        content = get_configuration_template()
+        config = content
+        params = config.get("params", {})
+
+        mounts = []
 
         for p in _projects:
-            config["params"][p.name]["name"] = p.display_name
-            config["params"][p.name]["name_short"] = p.display_name_short
-            config["params"][p.name]["repo_url"] = p.repo_url_without_extension
-            config["params"][p.name]["documentation"]["path"] = p.path
+            project_params = {
+                "name": p.display_name,
+                "description": p.description,
+                "name_short": p.display_name_short,
+                "repo_url": p.repo_url_without_extension,
+            }
             if self.option(f"local-{p.name}"):
-                version: str = "development"
-                config["params"][p.name]["documentation"]["defaultVersion"] = version
-                config["params"][p.name]["documentation"]["versions"] = {
-                    version: version
+                version: str = "local"
+                project_params["documentation"] = {
+                    "defaultVersion": version,
+                    "stableVersion": version,
+                    "developmentVersion": version,
+                    "versions": {version: version},
+                    "path": p.path
                 }
-                config["params"][p.name]["documentation"]["stableVersion"] = version
-                config["params"][p.name]["documentation"][
-                    "developmentVersion"
-                ] = version
+                if self.option(f"editable-{p.name}"):
+                    mounts.append(
+                        {
+                            "source": str(Path(self.option(f"local-{p.name}")) / "docs"),
+                            "target": str((self.DESTINATION / p.path / version).relative_to(self.DESTINATION.parent))
+                        }
+                    )
             else:
-                versions = content[p.name]["versions"]
+                versions = {v: v for v in p.versions}
                 branches = get_branches(p)
-                config["params"][p.name]["documentation"]["versions"] = {
-                    **branches,
-                    **versions,
+                stable_version = next(iter([*versions.keys(), *branches]))
+                project_params["documentation"] = {
+                    "defaultVersion": stable_version,
+                    "stableVersion": stable_version,
+                    "developmentVersion": p.development_branch,
+                    "versions": {
+                        **branches,
+                        **versions,
+                    },
+                    "path": p.path
                 }
-                config["params"][p.name]["documentation"]["stableVersion"] = next(
-                    iter(versions.keys())
-                )
-                config["params"][p.name]["documentation"][
-                    "developmentVersion"
-                ] = p.development_branch
+            
+            params[p.name] = project_params
 
-        config["params"]["projects"] = [p.name for p in _projects]
+        params["projects"] = [p.name for p in _projects]
+        config["params"] = params
+
+        if len(mounts) > 0:
+            mounts = [
+                {
+                    "source": "content",
+                    "target": "content"
+                },
+                *mounts
+            ]
+            config["module"] = {"mounts": mounts}
 
         if file.exists():
             file.unlink()
 
-        file.write_text(tomli_w.dumps(config))
+        with open(file, "w") as f:
+            yaml.dump(config, f)
         return config
 
     def handle(self) -> int:
@@ -222,55 +264,65 @@ class ConfigureCommand(Command):
 
 
 class DocsPullCommand(ConfigureCommand):
-    DESTINATION: Path = Path(__file__).parent.parent / "content/docs"
-
     name = "docs pull"
 
     description = "Pull the latest version of the documentation."
 
     def handle(self) -> int:
-        content = self.get_configuration()
+        content = get_configuration()
 
         if self.DESTINATION.is_symlink():
             self.DESTINATION.unlink()
         elif self.DESTINATION.exists():
             shutil.rmtree(self.DESTINATION)
 
+        self.DESTINATION.mkdir(parents=True)
+
+        with open(self.DESTINATION / "_index.md", "w") as f:
+            f.write("---\n")
+            f.write("title: \"\"\n")
+            f.write("draft: false\n")
+            f.write("layout: \"home\"\n")
+            f.write("---\n")
+
         for p in _projects:
-            versions = content[p.name]["versions"]
-            branches = get_branches(p)
-            default_version = content["config"]["params"][p.name]["documentation"][
-                "defaultVersion"
-            ]
+            project_params = content["params"][p.name]
+            versions = project_params["documentation"]["versions"]
+            default_version = project_params["documentation"]["defaultVersion"]
             destination = self.DESTINATION / p.path
 
             destination.mkdir(parents=True)
+            with open(destination / "_index.md", "w") as f:
+                f.write("---\n")
+                f.write("title: \"Redirecting...\"\n")
+                f.write("layout: redirect\n")
+                f.write("params:\n")
+                f.write(f"  url: \"/{p.name}/{default_version}/\"\n")
+                f.write("---\n")
 
             if self.option(f"local-{p.name}"):
-                self._pull_local_version(
-                    src=Path(self.option(f"local-{p.name}")),
-                    dest=destination,
-                    editable=self.option(f"editable-{p.name}"),
-                )
+                if not self.option(f"editable-{p.name}"):
+                    self._pull_local_version(
+                        src=Path(self.option(f"local-{p.name}")),
+                        dest=destination / default_version,
+                        editable=self.option(f"editable-{p.name}"),
+                    )
+                else:
+                    write_search_index_md(p, default_version, destination / default_version)
                 continue
 
-            for version, name in versions.items():
-                is_default = default_version == name
-                self._pull_version(
-                    repo=p.repo_url,
-                    version=version,
-                    dest=destination,
-                    name=name,
-                    is_default=is_default,
-                )
+            versions_sorted = list(versions.items())
+            versions_sorted.sort(key=lambda x: x[0] != default_version)
 
-            for branch, name in branches.items():
-                is_default = default_version == branch
+            for x in versions_sorted:
+                k, v = x
+                is_default = default_version == k
                 self._pull_version(
+                    project=p,
                     repo=p.repo_url,
-                    version=branch,
+                    version=k,
                     dest=destination,
-                    name=name,
+                    name=v,
                     is_default=is_default,
                 )
 
@@ -284,17 +336,26 @@ class DocsPullCommand(ConfigureCommand):
             raise Exception(f"Source directory {src} does not exist")
         if not src.is_dir():
             raise Exception(f"Source {src} is not a directory")
+        # Symlink directory to destination
+        if dest.is_symlink():
+            dest.unlink()
+        elif dest.exists():
+            shutil.rmtree(dest)
         if editable:
-            # Symlink directory to destination
-            dest.rmdir()
             dest.symlink_to(src, target_is_directory=True)
         else:
             # Copy files at the root of the destination
-            for filepath in src.glob("*.md"):
-                shutil.copyfile(filepath, dest.joinpath(filepath.name))
+            for filepath in src.glob("**/*"):
+                if not Path(filepath).is_file():
+                    continue
+                postfix = filepath.relative_to(src)
+                target = dest / postfix
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(filepath, dest / postfix)
 
     def _pull_version(
         self,
+        project: Project,
         repo: str,
         version: str,
         dest: Path,
@@ -334,26 +395,70 @@ class DocsPullCommand(ConfigureCommand):
                 subprocess.run(["git", "sparse-checkout", "init", "--cone"])
                 subprocess.run(["git", "sparse-checkout", "set", "docs"])
 
-                if is_default:
-                    self._pull_local_version(tmp_dir, dest)
-                else:
-                    path.mkdir()
+                path.mkdir()
+                docs_dir = tmp_dir / "docs"
 
-                    for filepath in Path(tmp_dir).joinpath("docs").glob("**/*.md"):
+                for filepath in docs_dir.glob("**/*"):
+                    if not Path(filepath).is_file():
+                        continue
+
+                    postfix = filepath.relative_to(docs_dir)
+                    target_path = path / postfix
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    if filepath.suffix == ".md":
                         with filepath.open() as f:
                             content = f.read()
-                            # Load front matter data
-                            _, frontmatter, content = content.split("---", maxsplit=2)
-                            frontmatter = yaml.safe_load(frontmatter)
-                            frontmatter["title"] += f" | {version}"
-                            new_frontmatter = yaml.dump(frontmatter).strip()
 
+                        # Load front matter data
+                        _, frontmatter, content = content.split("---", maxsplit=2)
+                        frontmatter = yaml.safe_load(frontmatter)
+                        menu_names = list(frontmatter["menu"].keys())
+                        params = frontmatter.get("params", {})
+                        if menu_names:
+                            entry = frontmatter["menu"][menu_names[0]]
+                            name = f"{project.name}__{version}"
+                            frontmatter["menu"] = {name: entry}
+                            params["_menu"] = name
+                        #if is_default and filepath.name == "_index.md" and filepath.parent.name == "docs":
+                        #    frontmatter["aliases"] = [f"/{project.name}/", f"/{project.name}"]
+                        frontmatter["params"] = {
+                            **params,
+                            "_version": version,
+                            "_project": project.name,
+                        }
+                        new_frontmatter = yaml.dump(frontmatter).strip()
                         new_content = f"---\n{new_frontmatter}\n---\n{content}"
-
-                        with path.joinpath(filepath.name).open("w") as f:
+                        with target_path.open("w") as f:
                             f.write(new_content)
+                    else:
+                        shutil.copyfile(filepath, target_path)
+
+            write_search_index_md(project, version, path)
+
         finally:
             os.chdir(cwd.as_posix())
+
+
+def write_search_index_md(project, version, path):
+    """
+    Write the search_index.md file for the given project and version at the specified path.
+    Args:
+        project: Project object with a 'name' attribute.
+        version: Version string.
+        path: pathlib.Path or str, directory where the file will be written.
+    """
+    path.mkdir(parents=True, exist_ok=True)
+    with open(path / "search_index.md", "w") as f:
+        f.write("---\n")
+        f.write("params:\n")
+        f.write(f"  _menu: \"{project.name}__{version}\"\n")
+        f.write(f"  _project: \"{project.name}\"\n")
+        f.write(f"  _version: \"{version}\"\n")
+        f.write("type: json\n")
+        f.write("layout: search_index\n")
+        f.write(f"url: \"/{project.name}/{version}/search_index.json\"\n")
+        f.write("---\n")
 
 
 class BuildCommand(DocsPullCommand):
@@ -365,10 +470,87 @@ class BuildCommand(DocsPullCommand):
         return super().handle()
 
 
+class BuildSearchIndexCommand(Command):
+    name = "build-search-index"
+    description = "Generate website search index."
+    options: ClassVar[list[Option]] = list(
+        itertools.chain.from_iterable(
+            [
+                [
+                    option(
+                        f"local-{p.name}",
+                        None,
+                        f"Build from local {p.display_name} source.",
+                        flag=False,
+                    ),
+                    option(
+                        f"editable-{p.name}",
+                        None,
+                        f"Symlink local {p.display_name} source rather than copying.",
+                    ),
+                ]
+                for p in _projects
+            ]
+        )
+    )
+
+    def build_search_index(self, file: Path | None = None) -> None:
+        output_dir = Path(__file__).parent.parent / "public"
+        config = get_configuration()
+
+        for p in _projects:
+            project_params = config["params"][p.name]
+            versions = project_params["documentation"]["versions"]
+
+            for v in versions:
+                self.build_search_index_for_project_version(output_dir / p.name / v)
+
+    @staticmethod
+    def build_search_index_for_project_version(dir: Path) -> None:
+        from parser import Parser
+        search_index_path = dir / "search_index.json"
+        if search_index_path.exists():
+            with open(search_index_path, "r", encoding="utf-8") as f:
+                search_index = json.load(f)
+
+            print(f"Loaded search index from {search_index_path} with {len(search_index)} entries")
+
+            new_docs = []
+
+            for entry in search_index["docs"]:
+                parser = Parser()
+                parser.feed(entry["text"])
+                parser.close()
+
+                for section in parser.data:
+                    if not section.is_excluded():
+                        if not section.title:
+                            section.title = [str(entry["title"])]
+                        title = "".join(section.title).strip()
+                        text = "".join(section.text).strip()
+                        location = entry["location"]
+                        if section.id:
+                            location += f"#{section.id}"
+                        new_docs.append({"location": location, "title": title, "text": text, "tags": entry["tags"]})
+
+            print(f"Processed search index with {len(new_docs)} entries")
+
+            with open(search_index_path, "w", encoding="utf-8") as f:
+                json.dump({**search_index, "docs": new_docs}, f, indent=2)
+                print(f"Wrote search index to {search_index_path}")
+        else:
+            print(f"Search index file not found at {search_index_path}")
+
+    def handle(self) -> int:
+        self.build_search_index()
+        return 0
+
+
 app = Application()
 app.add(ConfigureCommand())
 app.add(DocsPullCommand())
 app.add(BuildCommand())
+app.add(BuildSearchIndexCommand())
 
 
 if __name__ == "__main__":

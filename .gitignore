@@ -13,10 +13,16 @@ algolia.json
 .hugo_build.lock
 
 # this is not generated with docs pull
-config.toml
+hugo.yaml
 
 .venv
 node_modules
 public
 assets
 
+/content
+
+__pycache__
+
+# TypeScript
+dist
