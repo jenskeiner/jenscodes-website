@@ -9,59 +9,54 @@
 {{- $menu := index .Site.Menus $menuName -}}
 <main class="flex grow flex-col">
     <div class="container mx-auto px-4 flex flex-row">
-
-        <aside class="hidden lg:block lg:relative w-1/4">
-            <div class="sticky top-[72px] overflow-y-auto sidebar-scrollbar max-h-[calc(100vh-116px)]">
+        <div class="jc-sidebar jc-sidebar--primary">
+            <div class="jc-sidebar-scrollwrap">
+                <div class="jc-sidebar-inner">
                 <nav
                         id="documentation-menu"
-                        class="font-medium text-base lg:text-sm pt-8"
+                        class="jc-nav jc-nav--primary"
                 >
-                    <ul>
-                        {{ range sort $menu "Weight" }}
-                        <li class="pb-6">
-                            {{ $render := $.IsMenuCurrent .Menu .}}
-                            {{ if and (not $render) .HasChildren }}
-                            {{ range .Children }}
-                            {{ if $.IsMenuCurrent .Menu . }}
-                            {{ $render = true }}
-                            {{ end }}
-                            {{ end }}
-                            {{ end }}
+                    <ul class="jc-nav__list">
+                        {{- range sort $menu "Weight" -}}
+                        {{- $isCurrentMenuItem := $.IsMenuCurrent .Menu . -}}
+                        {{- if and (not $isCurrentMenuItem) .HasChildren -}}
+                        {{- range .Children -}}
+                        {{- if $.IsMenuCurrent .Menu . -}}
+                        {{- $isCurrentMenuItem = true -}}
+                        {{- end -}}
+                        {{- end -}}
+                        {{- end -}}
+                        <li class="jc-nav-item{{- if $isCurrentMenuItem }} jc-nav-item__active{{- end -}}">
                             <a
                                     href="{{ .Page.RelPermalink }}"
-                                    class="text-2xl {{ if $render }}
-                        text-green-500 dark:text-green-300
-                      {{ end }}"
-                            >{{ index (split .Name "|") 0 -}}</a
+                                    class="jc-nav__link{{- if $isCurrentMenuItem }} jc-nav__link--active{{- end -}}"
                             >
-                            {{ if $render }}
-                            {{ .Page.TableOfContents }}
-                            {{ end }}
+                              <span class="jc-ellipsis">{{- index (split .Name "|") 0 -}}</span>
+                            </a>
                         </li>
-                        {{ end }}
+                        {{- if $isCurrentMenuItem -}}
+                        {{- range (index .Page.Fragments.Headings 0).Headings -}}
+                        <li class="jc-nav__item jc-nav__item--section jc-nav__item--nested">{{ .Title | safeHTML }}</li>
+                        {{- end -}}
+                        {{- end -}}
+                    {{- end -}}
                     </ul>
                 </nav>
+                </div>
             </div>
-        </aside>
+        </div>
 
-        <div id="content" class="w-full lg:w-3/4 pt-8">
-            <main
-        id="docs"
-        class="min-w-0 w-full lg:px-12 lg:flex-auto lg:static lg:max-h-full lg:overflow-visible"
-        data-controller="clipboard"
-      >
+        <div class="content w-full lg:w-3/4 pt-8 min-w-0 lg:px-12 lg:flex-auto lg:static lg:max-h-full lg:overflow-visible" data-controller="clipboard">
         <h1 class="doc-title">{{ index (split .Name "|") 0 -}}</h1>
         {{ .TableOfContents }}
 
         {{- $content := .Content -}}
-        {{ $content = $content | replaceRE "(<h[1-9] id=\"([^\"]+)\".+)(</h[1-9]+>)" `${1} <a href="#${2}" class="header-link"
-          aria-label="Permanent link">#</a> ${3}` | safeHTML
+        {{ $content = $content | replaceRE "(<h[1-9] id=\"([^\"]+)\".+)(</h[1-9]+>)" `<a href="#${2}" class="jc-section-link"
+          aria-label="Permanent link">${1}</a> ${3}` | safeHTML
         }}
         {{ $content = $content | replaceRE "(<table[^>]*>(?:.|\n)+?</table>)" `<div class="table-wrapper">${1}</div>` | safeHTML }}
         {{ $content }}
-      </main>
         </div>
-
     </div>
 </main>
 {{ end }}

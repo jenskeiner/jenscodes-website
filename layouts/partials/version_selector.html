@@ -11,8 +11,8 @@
 <div>
     <div
             class="relative md:mr-0"
-            data-controller="select"
-            data-action="select:click:outside->select#close"
+            data-controller="select-version"
+            data-action="select:click:outside->select-version#close"
     >
         <button
                 type="button"
@@ -20,8 +20,8 @@
                 aria-haspopup="listbox"
                 aria-expanded="true"
                 aria-labelledby="listbox-label"
-                data-select-target="button"
-                data-action="click->select#toggle"
+                data-select-version-target="button"
+                data-action="click->select-version#toggle"
         >
           <span
                   aria-label="Selected"
@@ -51,7 +51,7 @@
         </button>
         <ul
                 class="hidden absolute z-10 mt-1 w-full shadow-clean-lg max-h-60 rounded-md py-1 px-1 text-base ring-1 ring-secondary-200/50 overflow-auto transition transform focus:outline-hidden sm:text-sm bg-light-note dark:bg-dark-bg-secondary dark:shadow-clean-dark-lg dark:ring-0"
-                data-select-target="menu"
+                data-select-version-target="menu"
                 tabindex="-1"
                 role="listbox"
                 aria-labelledby="listbox-label"
@@ -64,19 +64,16 @@
         >
             {{ range $name, $path := $versions }}
             <li
-                    class="cursor-default select-none relative"
+                    class="cursor-default select-none relative version-selector-item"
                     id="listbox-option-0"
                     role="option"
             >
-                {{ $url := (printf "/%s/%s/" $project $name) }}
-                <a
-                        href="{{ $url | relURL }}"
-                        class="flex justify-end items-center content-center transition py-2 px-1.5 rounded-sm duration-300 hover:bg-light-note-darker dark:hover:bg-dark-note-darker"
-                >
+                {{- $url := (printf "/%s/%s/" $project $name) -}}
+                <a href="{{ $url | relURL }}">
                     {{ if eq $version $name }}
                     <span
                             aria-label="Selected"
-                            class="bg-green-500 shrink-0 inline-block h-2 w-2 rounded-full dark:bg-green-300"
+                            class="version-selector-item-selected"
                     ></span>
                     {{ end }}
                     <span

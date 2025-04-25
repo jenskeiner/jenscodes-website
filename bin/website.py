@@ -307,6 +307,8 @@ class DocsPullCommand(ConfigureCommand):
                         dest=destination / default_version,
                         editable=self.option(f"editable-{p.name}"),
                     )
+                else:
+                    write_search_index_md(p, default_version, destination / default_version)
                 continue
 
             versions_sorted = list(versions.items())
@@ -432,19 +434,31 @@ class DocsPullCommand(ConfigureCommand):
                     else:
                         shutil.copyfile(filepath, target_path)
 
-            with open(path / "search_index.md", "w") as f:
-                f.write("---\n")
-                f.write("params:\n")
-                f.write(f"  _menu: \"{project.name}__{version}\"\n")
-                f.write(f"  _project: \"{project.name}\"\n")
-                f.write(f"  _version: \"{version}\"\n")
-                f.write("type: json\n")
-                f.write("layout: search_index\n")
-                f.write(f"url: \"/{project.name}/{version}/search_index.json\"\n")
-                f.write("---\n")
+            write_search_index_md(project, version, path)
 
         finally:
             os.chdir(cwd.as_posix())
+
+
+def write_search_index_md(project, version, path):
+    """
+    Write the search_index.md file for the given project and version at the specified path.
+    Args:
+        project: Project object with a 'name' attribute.
+        version: Version string.
+        path: pathlib.Path or str, directory where the file will be written.
+    """
+    path.mkdir(parents=True, exist_ok=True)
+    with open(path / "search_index.md", "w") as f:
+        f.write("---\n")
+        f.write("params:\n")
+        f.write(f"  _menu: \"{project.name}__{version}\"\n")
+        f.write(f"  _project: \"{project.name}\"\n")
+        f.write(f"  _version: \"{version}\"\n")
+        f.write("type: json\n")
+        f.write("layout: search_index\n")
+        f.write(f"url: \"/{project.name}/{version}/search_index.json\"\n")
+        f.write("---\n")
 
 
 class BuildCommand(DocsPullCommand):
@@ -501,9 +515,9 @@ class BuildSearchIndexCommand(Command):
 
             print(f"Loaded search index from {search_index_path} with {len(search_index)} entries")
 
-            new_index = []
+            new_docs = []
 
-            for entry in search_index:
+            for entry in search_index["docs"]:
                 parser = Parser()
                 parser.feed(entry["text"])
                 parser.close()
@@ -517,12 +531,12 @@ class BuildSearchIndexCommand(Command):
                         location = entry["location"]
                         if section.id:
                             location += f"#{section.id}"
-                        new_index.append({"location": location, "title": title, "text": text, "tags": entry["tags"]})
+                        new_docs.append({"location": location, "title": title, "text": text, "tags": entry["tags"]})
 
-            print(f"Processed search index with {len(new_index)} entries")
+            print(f"Processed search index with {len(new_docs)} entries")
 
             with open(search_index_path, "w", encoding="utf-8") as f:
-                json.dump(new_index, f, indent=2)
+                json.dump({**search_index, "docs": new_docs}, f, indent=2)
                 print(f"Wrote search index to {search_index_path}")
         else:
             print(f"Search index file not found at {search_index_path}")

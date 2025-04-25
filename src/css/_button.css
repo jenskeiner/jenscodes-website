@@ -1,0 +1,7 @@
+.btn {
+  @apply flex items-center w-full border border-primary-200/80 dark:border-primary-600 bg-transparent rounded-md px-2 py-1 text-left cursor-pointer;
+}
+
+.btn:focus {
+  @apply outline-hidden;
+}

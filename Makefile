@@ -20,6 +20,6 @@ node_modules: package.json package-lock.json
 	npm install
 	@touch node_modules
 
-content/docs: pyproject.toml
+content/docs: hugo.yaml.in
 	uv run bin/website.py configure $(WEBSITE_ARGS)
 	uv run bin/website.py docs pull $(WEBSITE_ARGS)

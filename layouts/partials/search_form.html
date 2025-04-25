@@ -1,20 +1,19 @@
-<div class="search" data-controller="search" role="dialog">
-  <label class="search-overlay" for="__search" data-search-target="overlay"></label>
-  <div class="relative float-right hidden search-expandable lg:flex" data-search-target="container" data-action="click->search#expand clickOutside->search#collapse" role="search">
+<div class="search" data-jc-component="search" role="dialog">
+  <label class="search-overlay" for="__search"></label>
+  <div class="relative float-right hidden search-expandable lg:flex" role="search">
     <form class="relative w-full" name="search">
-      <input class="search-input focus:outline-none" type="text" name="query" placeholder="Search" aria-label="Search" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" required="" data-search-target="query" data-action="input->search#performSearch focus->search#initializeIndex"/>
-      <input type="hidden" name="index" value="{{ printf "/%s/%s/search_index.json" .Page.Params._project .Page.Params._version }}" data-search-target="index"/>
+      <input class="search-input focus:outline-none" type="text" name="query" data-jc-component="search-query" placeholder="Search" aria-label="Search" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" required=""/>
+      <input type="hidden" name="index" value="{{- printf "/%s/%s/search_index.json" .Page.Params._project .Page.Params._version -}}"/>
       <label class="search-icon" for="__search">
       </label>
     </form>
-    <div class="search-output" data-search-target="output">
+    <div class="search-output">
       <div class="search-scrollwrap" tabindex="0">
-        <div class="search-result">
-          <div class="search-result-meta" data-search-target="meta">
+        <div class="search-result" data-jc-component="search-result">
+          <div class="search-result-meta">
             Type to start searching
           </div>
-          <ol class="search-result-list" data-search-target="list">
-            
+          <ol class="search-result-list">
           </ol>
         </div>
       </div>

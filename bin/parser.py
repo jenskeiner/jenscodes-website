@@ -85,7 +85,7 @@ class Parser(HTMLParser):
 
         # Tags to keep
         self.keep = set([
-            "p",                       # Paragraphs
+            "p", "br",                      # Paragraphs
             "code", "pre",             # Code blocks
             "li", "ol", "ul",          # Lists
             "sub", "sup"               # Sub- and superscripts
@@ -253,7 +253,7 @@ class Parser(HTMLParser):
 void = set([
     "area",                            # Image map areas
     "base",                            # Document base
-    "br",                              # Line breaks
+    #"br",                              # Line breaks
     "col",                             # Table columns
     "embed",                           # External content
     "hr",                              # Horizontal rules

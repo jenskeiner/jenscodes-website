@@ -1,9 +1,9 @@
 .search .search-overlay {
-  @apply opacity-0 z-1 bg-black/50 h-0 fixed left-0 top-0 w-0;
+  @apply opacity-0 z-1 bg-black/70 h-0 fixed left-0 top-0 w-0;
   transition:width 0ms .25s,height 0ms .25s,opacity .25s;
 }
 
-.search .search-overlay.search-expanded {
+[data-jc-toggle=search]:checked ~ * .search .search-overlay {
   height:200vh;
   opacity: 1;
   transition:width 0ms,height 0ms,opacity .25s;
@@ -15,16 +15,16 @@
   transition:width .25s cubic-bezier(.1,.7,.1,1);
 }
 
-.search .search-expandable.search-expanded {
+[data-jc-toggle=search]:checked ~ * .search-expandable {
   @apply w-200;
 }
 
 .search .search-input {
-  @apply bg-light-note-tertiary w-full pl-[3.2rem] p-1 rounded-t-md;
+  @apply bg-primary-200 dark:bg-primary-700 w-full pl-[3.2rem] p-1 rounded-t-md;
 }
 
-.search .search-input:not(.search-expanded) {
-  @apply rounded-b-md;
+[data-jc-toggle=search]:not(:checked) ~ * .search-input {
+  @apply bg-primary-200/50 dark:bg-primary-700/50 rounded-b-md;
 }
 
 .search .search-icon {
@@ -48,10 +48,10 @@
 }
 
 .search .search-output {
-  @apply bg-light-note-secondary dark:bg-dark-bg-primary overflow-hidden absolute w-full z-[2] opacity-0 top-[2.3rem] transition-opacity duration-400 rounded-b-md;
+  @apply bg-white dark:bg-dark-bg-primary overflow-hidden absolute w-full z-[2] opacity-0 top-[2.3rem] transition-opacity duration-400 rounded-b-md;
 }
 
-.search .search-output.search-expanded {
+[data-jc-toggle=search]:checked ~ * .search-output {
   @apply opacity-100 shadow-md;
 }
 
@@ -96,12 +96,16 @@
 }
 
 .search .search-result-link:hover {
-  @apply bg-light-note/35 dark:bg-dark-bg-primary;
+  @apply bg-green-50 dark:bg-green-800/30;
 }
 
-.search .search-result-link article {
-  @apply relative overflow-hidden m-0 pl-[3.2rem];
+.search .search-result-article {
+  @apply relative overflow-hidden m-0 pl-[3.2rem] pr-8;
   line-height: 1.6;
+}
+
+.search-result-more .search-result-article {
+  @apply pl-0;
 }
 
 .search .search-result-icon {
@@ -124,40 +128,107 @@
   mask-size:contain;
 }
 
-.search-result-nav {
+/*.search-result-more {
+  @apply pl-[3.2rem];
+}*/
+
+.search-result-more summary {
+  @apply pl-[3.2rem];
+  list-style: none;
+}
+
+.search-result-more > a {
+  @apply pl-[3.2rem];
+}
+
+-search-result .jc-typeset {
+  font-size: .64rem;
+  line-height: 1.6;
+}
+
+.search-result-more summary::marker {
+  @apply hidden;
+}
+
+.search-result .jc-typeset h1 {
+  @apply text-base leading-[1.4];
+}
+.search-result .jc-typeset h1 mark {
+  text-decoration:none
+}
+.search-result .jc-typeset h2 {
+  @apply text-base leading-[1.6];
+}
+
+.search-result-tags {
   @apply pt-2 flex gap-2;
 }
 
 .search-result-tag {
-  @apply px-2 py-0.5 bg-light-note-tertiary rounded-full text-xs;
+  @apply px-2 py-0.5 bg-transparent text-xs;
 }
 
 .search-result-item h1 {
   @apply flex items-center px-0 py-[0.2rem] text-base;
 }
 
-/* Highlight matching text */
-.search-result-item em {
-  @apply text-blue-600 font-medium not-italic rounded-sm;
+.search-result-item * mark {
+  @apply text-green-500 dark:text-green-300 bg-transparent;
 }
 
+.search-result-item details summary {
+  @apply text-xs;
+}
+
+/* Highlight matching text */
+/*.search-result-item em {
+  @apply text-blue-600 font-medium not-italic rounded-sm;
+}*/
+
 /* Dark mode styles */
-html.dark .search-result-item {
+/*html.dark .search-result-item {
   @apply bg-gray-900/10;
 }
 
 html.dark .search-result-item:hover {
   @apply bg-gray-900/25;
-}
+}*/
 
-html.dark .search-result-item h1 {
+/*html.dark .search-result-item h1 {
   @apply bg-blue-950/50 text-blue-300 ring-blue-200/10;
-}
+}*/
 
-html.dark .search-result-item:hover h1 {
+/*html.dark .search-result-item:hover h1 {
   @apply bg-blue-950/80;
+}*/
+
+/*html.dark .search-result-item em {
+  @apply text-blue-300;
+}*/
+
+.search-result-item article {
+  @apply text-xs;
 }
 
-html.dark .search-result-item em {
-  @apply text-blue-300;
+.search-result-item article h1,
+.search-result-item article h2,
+.search-result-item article h3,
+.search-result-item article h4,
+.search-result-item article h5,
+.search-result-item article h6 {
+  overflow-wrap: break-word;
+  @apply font-light;
+}
+
+.search-result-item article h2,
+.search-result-item article h3,
+.search-result-item article h4,
+.search-result-item article h5,
+.search-result-item article h6
+{
+  @apply text-base font-bold mb-2;
+}
+
+.search-result-item article pre {
+  @apply my-1 bg-code-bg-light dark:bg-primary-900;
 }

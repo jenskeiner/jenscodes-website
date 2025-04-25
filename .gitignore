@@ -20,6 +20,9 @@ node_modules
 public
 assets
 
-content
+/content
 
 __pycache__
+
+# TypeScript
+dist
