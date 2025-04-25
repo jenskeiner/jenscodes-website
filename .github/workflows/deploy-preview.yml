@@ -61,6 +61,7 @@ jobs:
           uv sync
           uv run bin/website.py build
       - name: Start Deployment
+        if: github.actor != 'dependabot[bot]'
         uses: bobheadxi/deployments@v1
         id: deployment
         with:
@@ -78,6 +79,7 @@ jobs:
         run: |
           uv run bin/website.py build-search-index
       - name: Deploy
+        if: github.actor != 'dependabot[bot]'
         uses: amondnet/vercel-action@v25
         id: vercel-action
         with:
@@ -88,8 +90,8 @@ jobs:
           github-comment: true
           working-directory: public
       - name: Update Deployment Status
+        if: github.actor != 'dependabot[bot]'
         uses: bobheadxi/deployments@v1
-        if: always()
         with:
           step: finish
           token: ${{ secrets.GITHUB_TOKEN }}
