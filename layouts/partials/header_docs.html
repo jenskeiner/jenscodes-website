@@ -56,21 +56,9 @@
                             </div>
                         </div>
                         <div class="px-2 pt-2 pb-3">
-                            {{ range sort $menu "Weight" }}
-                            {{ $render := $.IsMenuCurrent .Menu .}}
-                            {{ if and (not $render) .HasChildren }}
-                            {{ range .Children }}
-                            {{ if $.IsMenuCurrent .Menu . }}
-                            {{ $render = true }}
-                            {{ end }}
-                            {{ end }}
-                            {{ end }}
-
                             <a href="{{ .Page.RelPermalink }}"
                                 class="block px-3 py-4 rounded-md text-base font-medium uppercase hover:bg-indigo-50 dark:hover:bg-gray-900 dark:hover:opacity-100">{{
                                 index (split .Name "|") 0 -}}</a>
-                            {{ end }}
-
                             <div class="flex justify-end px-2 pt-2">
                                 <div class="flex items-center space-x-2">
                                     <a href="{{ $params.repo_url }}" title="Go to the Github project"
@@ -87,11 +75,9 @@
                                     </a>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
-
             </div>
             <a class="font-header text-4xl">{{ $params.name }}</a>
         </div>

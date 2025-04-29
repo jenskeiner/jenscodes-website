@@ -48,11 +48,10 @@
       data-transition-leave-from="opacity-100"
       data-transition-leave-to="opacity-0"
     >
-      {{ $tabTotal := .Get "tabTotal" }}
-      {{ range $i, $sequence := (seq $tabTotal) }}
-
-        {{ $tabID := $.Get (print "tabID" $sequence) }}
-        {{ $tabName := (print "tabName" $sequence) }}
+      {{- $tabTotal := .Get "tabTotal" -}}
+      {{- range $i, $sequence := (seq $tabTotal) -}}
+        {{- $tabID := $.Get (print "tabID" $sequence) -}}
+        {{- $tabName := (print "tabName" $sequence) -}}
         <li
           class="tab-item"
           id="listbox-option-0"
@@ -70,21 +69,18 @@
             </span>
           </a>
         </li>
-      {{ end }}
+      {{- end -}}
     </ul>
   </div>
 
   <!-- Desktop tabs -->
   <div class="border-b border-primary-100 dark:border-gray-700 hidden sm:block">
     <nav class="-mb-px flex space-x-8">
-      {{ $tabTotal := .Get "tabTotal" }}
-      {{ range $i, $sequence := (seq $tabTotal) }}
-
-        {{ $tabID := $.Get (print "tabID" $sequence) }}
-        {{ $tabName := (print "tabName" $sequence) }}
-
-        {{ if eq $sequence 1 }}
-
+      {{- $tabTotal := .Get "tabTotal" -}}
+      {{- range $i, $sequence := (seq $tabTotal) -}}
+        {{- $tabID := $.Get (print "tabID" $sequence) -}}
+        {{- $tabName := (print "tabName" $sequence) -}}
+        {{- if eq $sequence 1 -}}
           <a
             class="tab active"
             id="{{ $tabID }}"
@@ -97,7 +93,7 @@
             data-action="click->tabs#change"
             >{{ $.Get $tabName }}</a
           >
-        {{ else }}
+        {{- else -}}
           <a
             class="tab"
             id="{{ $tabID }}"
@@ -110,8 +106,8 @@
             data-action="click->tabs#change"
             >{{ $.Get $tabName }}</a
           >
-        {{ end }}
-      {{ end }}
+        {{- end -}}
+      {{- end -}}
     </nav>
   </div>
 

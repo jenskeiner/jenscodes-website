@@ -1,9 +1,9 @@
-{{ $firstTabID := .Parent.Get "tabID1" }}
-{{ $tab := .Get "tabID" }}
-{{ $tabID := print "tab-pane-" $tab }}
-{{ $tabName := (print "tabName" $tab) }}
+{{- $firstTabID := .Parent.Get "tabID1" -}}
+{{- $tab := .Get "tabID" -}}
+{{- $tabID := print "tab-pane-" $tab -}}
+{{- $tabName := (print "tabName" $tab) -}}
 
-{{ if eq $tab $firstTabID }}
+{{- if eq $tab $firstTabID -}}
   <div
     class="tab-pane"
     id="{{ $tabID }}"
@@ -13,7 +13,7 @@
   >
     {{ $.Inner | markdownify }}
   </div>
-{{ else }}
+{{- else -}}
   <div
     class="tab-pane hidden"
     id="{{ $tabID }}"
@@ -23,4 +23,4 @@
   >
     {{ $.Inner | markdownify }}
   </div>
-{{ end }}
+{{- end -}}

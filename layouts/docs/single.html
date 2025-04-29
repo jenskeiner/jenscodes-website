@@ -49,12 +49,11 @@
         <div class="content w-full lg:w-3/4 pt-8 min-w-0 lg:px-12 lg:flex-auto lg:static lg:max-h-full lg:overflow-visible" data-controller="clipboard">
         <h1 class="doc-title">{{ index (split .Name "|") 0 -}}</h1>
         {{ .TableOfContents }}
-
         {{- $content := .Content -}}
-        {{ $content = $content | replaceRE "(<h[1-9] id=\"([^\"]+)\".+)(</h[1-9]+>)" `<a href="#${2}" class="jc-section-link"
+        {{- $content = $content | replaceRE "(<h[1-9] id=\"([^\"]+)\".+)(</h[1-9]+>)" `<a href="#${2}" class="jc-section-link"
           aria-label="Permanent link">${1}</a> ${3}` | safeHTML
-        }}
-        {{ $content = $content | replaceRE "(<table[^>]*>(?:.|\n)+?</table>)" `<div class="table-wrapper">${1}</div>` | safeHTML }}
+        -}}
+        {{- $content = $content | replaceRE "(<table[^>]*>(?:.|\n)+?</table>)" `<div class="table-wrapper">${1}</div>` | safeHTML -}}
         {{ $content }}
         </div>
     </div>

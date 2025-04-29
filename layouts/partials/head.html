@@ -1,19 +1,17 @@
 <head>
   <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
   <meta charset="utf-8" />
-  {{ if .Title }}
+  {{- if .Title }}
     {{ if eq .Page.Type "docs" }}
-      <title>
-        {{ delimit (slice .Params._project .Title .Params._version) " | " }}
-      </title>
+  <title>{{ delimit (slice .Params._project .Title .Params._version) " | " }}</title>
     {{ else if (or (eq .Page.Type "blog") (eq .Page.Type "categories") (eq .Page.Type "tags")) }}
-      <title>{{ delimit (slice .Title "Blog" .Site.Title) " | " }}</title>
+  <title>{{ delimit (slice .Title "Blog" .Site.Title) " | " }}</title>
     {{ else }}
-      <title>{{ delimit (slice .Title .Site.Title) " | " }}</title>
+  <title>{{ delimit (slice .Title .Site.Title) " | " }}</title>
     {{ end }}
   {{ else }}
-    <title>{{ .Site.Title }}</title>
-  {{ end }}
+  <title>{{ .Site.Title }}</title>
+  {{ end -}}
   <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -30,5 +28,5 @@
       <link rel="%s" type="%s" href="%s" title="%s" />` .Rel .MediaType.Type .Permalink $.Site.Title | safeHTML
     }}
   {{ end -}}
-  {{- partial "stylesheets.html" . -}}
+  {{ partial "stylesheets.html" . }}
 </head>

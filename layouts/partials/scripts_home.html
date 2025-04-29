@@ -1,12 +1,11 @@
-{{ $script := resources.Get "assets/app_home.js" }}
-
-{{ if hugo.IsServer }}
+{{- $script := resources.Get "assets/app_home.js" -}}
+{{- if hugo.IsServer }}
   <script type="module" src="{{ $script.RelPermalink }}"></script>
-{{ else }}
-  {{ $script := $script | fingerprint }}
+{{- else }}
+  {{- $script := $script | fingerprint -}}
   <script
     type="module"
     src="{{ $script.RelPermalink }}"
     integrity="{{ $script.Data.Integrity }}"
   ></script>
-{{ end }}
+{{- end }}
